@@ -198,6 +198,7 @@
             // but its nice to demonstrate that you can do everything with jsfeat
             for (lev = 1; lev < num_train_levels; ++lev) {
               lev_corners = pattern_corners[lev];
+
               lev_descr = pattern_descriptors[lev];
 
               new_width = (lev0_img.cols * sc) | 0;
@@ -367,6 +368,7 @@
         function detect_keypoints(img, corners, max_allowed) {
           // detect features
           var count = jsfeat.yape06.detect(img, corners, 17);
+          console.log(max_allowed, count);
 
           // sort by score and reduce the count if needed
           if (count > max_allowed) {

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="description" content="A JavaScript Computer Vision Library" />
+    <meta name="author" content="Eugene Zatepyakin" />
+    <title>JSFeat - JavaScript Computer Vision Library.</title>
+
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Droid+Sans:regular,bold|Inconsolata|PT+Sans:400,700"
+    />
+    <link rel="stylesheet" href="css/bootstrap.css" />
+    <link rel="stylesheet" href="css/jsfeat.css" />
+  </head>
+  <body>
+    <div style=" width:640px;height:480px;margin: 10px auto;">
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <div id="no_rtc" class="alert alert-error" style="display:none;"></div>
+      <div id="log" class="alert alert-info"></div>
+    </div>
+
+    <script
+      type="text/javascript"
+      src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"
+    ></script>
+    <script type="text/javascript" src="js/jsfeat-min.js"></script>
+    <script type="text/javascript" src="js/compatibility.js"></script>
+    <script type="text/javascript" src="js/profiler.js"></script>
+    <script type="text/javascript" src="js/dat.gui.min.js"></script>
+    <script type="text/javascript" src="orb_lib.js"></script>
+    <script type="text/javascript">
+      $(window).load(function() {
+        "use strict";
+
+        // lets do some fun
+        var video = new Image();
+
+        var canvas = document.getElementById("canvas");
+        try {
+          var attempts = 0;
+          var readyListener = function(event) {
+            findVideoSize();
+            video.onload = null;
+          };
+          var findVideoSize = function() {
+            if (video.width > 0 && video.height > 0) {
+              onDimensionsReady(video.width, video.height);
+            } else {
+              if (attempts < 10) {
+                attempts++;
+                setTimeout(findVideoSize, 200);
+              } else {
+                onDimensionsReady(canvas.width, canvas.height);
+              }
+            }
+          };
+          var onDimensionsReady = function(width, height) {
+            demo_app(width, height);
+            compatibility.requestAnimationFrame(tick);
+          };
+
+          video.onload = readyListener;
+
+          video.src = "img/all.jpg";
+        } catch (error) {
+          $("#canvas").hide();
+          $("#log").hide();
+          $("#no_rtc").html("<h4>Something goes wrong...</h4>");
+          $("#no_rtc").show();
+        }
+
+        var gui, options;
+        var orbMatching = new OrbMatching(canvas, 4);
+
+        var demo_opt = function() {
+          this.blur_size = 5;
+          this.lap_thres = 30;
+          this.eigen_thres = 25;
+          this.match_threshold = 48;
+          this.train_images = [];
+
+          this.train_pattern = function() {
+            orbMatching.train_pattern();
+          };
+        };
+
+        function demo_app(videoWidth, videoHeight) {
+          options = new demo_opt();
+          gui = new dat.GUI();
+
+          gui.add(options, "blur_size", 3, 9).step(1);
+          gui.add(options, "lap_thres", 1, 100);
+          gui.add(options, "eigen_thres", 1, 100);
+          gui.add(options, "match_threshold", 16, 128);
+          gui
+            .add(options, "train_images", ["all.jpg", "test1.png", "test2.png"])
+            .onChange(function(value) {
+              video.src = "img/" + value;
+            });
+          gui.add(options, "train_pattern");
+        }
+
+        function tick() {
+          compatibility.requestAnimationFrame(tick);
+          orbMatching.update_options(options);
+          orbMatching.update(video);
+          $("#log").html(orbMatching.getLog());
+        }
+
+        $(window).unload(function() {
+          video.src = null;
+        });
+      });
+    </script>
+  </body>
+</html>
